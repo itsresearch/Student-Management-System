@@ -1,22 +1,28 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
-from .models import CustomUser, PasswordResetRequest
-from django.utils import timezone
 from django.contrib import messages
-from django.core.mail import send_mail
-from django.conf import settings
 from django.utils.crypto import get_random_string
+from django.utils.http import url_has_allowed_host_and_scheme
+from .models import CustomUser, PasswordResetRequest
 
 
 def signup_view(request):
     if request.method == 'POST':
-        first_name = request.POST['first_name']
-        last_name = request.POST['last_name']
-        email = request.POST['email']
-        password = request.POST['password']
-        role = request.POST.get('role')  # Get role from the form (student, teacher, or admin)
-        
-        # Create the user
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
+        account_type = request.POST.get('account_type', 'teacher')
+
+        if password != confirm_password:
+            messages.error(request, 'Passwords do not match.')
+            return redirect('signup')
+
+        if CustomUser.objects.filter(email=email).exists():
+            messages.error(request, 'An account with this email already exists.')
+            return redirect('signup')
+
         user = CustomUser.objects.create_user(
             username=email,
             email=email,
@@ -24,23 +30,25 @@ def signup_view(request):
             last_name=last_name,
             password=password,
         )
-        
-        # Assign the appropriate role
-        if role == 'student':
-            user.is_student = True
-        elif role == 'teacher':
-            user.is_teacher = True
-        elif role == 'admin':
-            user.is_admin = True
 
-        user.save()  # Save the user with the assigned role
+        if account_type == 'admin':
+            user.is_admin = True
+            user.is_staff = True
+        else:
+            user.is_teacher = True
+
+        user.save()
+
         login(request, user)
         messages.success(request, 'Signup successful!')
-        return redirect('index')  # Redirect to the index or home page
+        if user.is_admin:
+            return redirect('dashboard')
+        return redirect('teacher_dashboard')
     return render(request, 'authentication/register.html')  # Render signup template
 
 
 def login_view(request):
+    next_url = request.POST.get('next') or request.GET.get('next')
     if request.method == 'POST':
         email = request.POST['email']
         password = request.POST['password']
@@ -49,21 +57,18 @@ def login_view(request):
         if user is not None:
             login(request, user)
             messages.success(request, 'Login successful!')
-            
-            # Redirect user based on their role
+
+            if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                return redirect(next_url)
+
             if user.is_admin:
-                return redirect('admin_dashboard')
-            elif user.is_teacher:
-                return redirect('teacher_dashboard')
-            elif user.is_student:
                 return redirect('dashboard')
-            else:
-                messages.error(request, 'Invalid user role')
-                return redirect('index')  # Redirect to index in case of error
-            
+            if user.is_teacher:
+                return redirect('teacher_dashboard')
+            return redirect('dashboard')
         else:
             messages.error(request, 'Invalid credentials')
-    return render(request, 'authentication/login.html')  # Render login template
+    return render(request, 'authentication/login.html', {'next': next_url or ''})  # Render login template
 
 
 def forgot_password_view(request):

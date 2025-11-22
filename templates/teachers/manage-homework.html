@@ -1,0 +1,80 @@
+{% extends 'Home/base.html' %}
+{% load static %}
+{% block body %}
+<div class="page-wrapper">
+   <div class="content container-fluid">
+      <div class="page-header">
+         <div class="row align-items-center">
+            <div class="col">
+               <h3 class="page-title">Homework & Assignments</h3>
+               <ul class="breadcrumb">
+                  <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a></li>
+                  <li class="breadcrumb-item active">Homework</li>
+               </ul>
+            </div>
+         </div>
+      </div>
+
+      <div class="row">
+         <div class="col-lg-4">
+            <div class="card">
+               <div class="card-header">
+                  <h5 class="card-title mb-0">Create homework</h5>
+               </div>
+               <div class="card-body">
+                  <form method="post">
+                     {% csrf_token %}
+                     {{ form.as_p }}
+                     <button type="submit" class="btn btn-primary btn-block">Save</button>
+                  </form>
+               </div>
+            </div>
+         </div>
+         <div class="col-lg-8">
+            <div class="card">
+               <div class="card-header d-flex justify-content-between align-items-center">
+                  <h5 class="card-title mb-0">Assigned homework</h5>
+               </div>
+               <div class="card-body">
+                  <div class="table-responsive">
+                     <table class="table table-hover">
+                        <thead>
+                           <tr>
+                              <th>Title</th>
+                              <th>Class</th>
+                              <th>Due</th>
+                              <th>Completed</th>
+                              <th>Status</th>
+                           </tr>
+                        </thead>
+                        <tbody>
+                           {% for homework in homework_items %}
+                           <tr>
+                              <td>{{ homework.title }}</td>
+                              <td>{{ homework.class_name }}</td>
+                              <td>{{ homework.due_date|date:"M d, Y" }}</td>
+                              <td>{{ homework.completed_count }}/{{ homework.completed_count|add:homework.pending_count }}</td>
+                              <td><span class="badge badge-info text-uppercase">{{ homework.status }}</span></td>
+                           </tr>
+                           {% empty %}
+                           <tr>
+                              <td colspan="5" class="text-center text-muted">No homework entries yet.</td>
+                           </tr>
+                           {% endfor %}
+                        </tbody>
+                     </table>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+
+<script src="{% static 'assets/js/jquery-3.6.0.min.js' %}"></script>
+<script src="{% static 'assets/js/popper.min.js' %}"></script>
+<script src="{% static 'assets/plugins/bootstrap/js/bootstrap.min.js' %}"></script>
+<script src="{% static 'assets/plugins/slimscroll/jquery.slimscroll.min.js' %}"></script>
+<script src="{% static 'assets/js/script.js' %}"></script>
+{% endblock %}
+

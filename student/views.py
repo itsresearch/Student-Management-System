@@ -1,10 +1,25 @@
-from django.http import HttpResponseForbidden
-from django.shortcuts import render, get_object_or_404,redirect
-from .models import *
 from django.contrib import messages
-# Create your views here.
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.http import HttpResponseForbidden
+from django.shortcuts import get_object_or_404, redirect, render
+from .models import Parent, Student
+from school.models import Notification
 
+
+def _ensure_staff_access(request):
+    if not (request.user.is_admin or request.user.is_teacher):
+        raise PermissionDenied("You do not have permission to access this page.")
+
+
+def create_notification(user, message):
+    if user.is_authenticated:
+        Notification.objects.create(user=user, message=message)
+
+
+@login_required
 def add_student(request):
+    _ensure_staff_access(request)
     if request.method == "POST":
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
@@ -30,6 +45,10 @@ def add_student(request):
         mother_email = request.POST.get('mother_email')
         present_address = request.POST.get('present_address')
         permanent_address = request.POST.get('permanent_address')
+
+        if Student.objects.filter(student_id=student_id).exists():
+            messages.error(request, "A student with this ID already exists.")
+            return redirect("add_student")
 
         # save parent information
         parent = Parent.objects.create(
@@ -61,27 +80,26 @@ def add_student(request):
             student_image = student_image,
             parent = parent
         )
-        create_notification(request.user, f"Added Student: {student.first_name} {student.last_name}")
+        create_notification(request.user, f"Added student: {student.first_name} {student.last_name}")
         messages.success(request, "Student added Successfully")
-        # return render(request, "student_list")
+        return redirect("student_list")
 
-  
-
-    return render(request,"students/add-student.html")
+    return render(request, "students/add-student.html")
 
 
-
+@login_required
 def student_list(request):
+    _ensure_staff_access(request)
     student_list = Student.objects.select_related('parent').all()
-    unread_notification = request.user.notification_set.filter(is_read=False)
     context = {
         'student_list': student_list,
-        'unread_notification': unread_notification
     }
     return render(request, "students/students.html", context)
 
 
+@login_required
 def edit_student(request,slug):
+    _ensure_staff_access(request)
     student = get_object_or_404(Student, slug=slug)
     parent = student.parent if hasattr(student, 'parent') else None
     if request.method == "POST":
@@ -98,6 +116,10 @@ def edit_student(request,slug):
         section = request.POST.get('section')
         student_image = request.FILES.get('student_image')  if request.FILES.get('student_image') else student.student_image
 
+        if Student.objects.exclude(pk=student.pk).filter(student_id=student_id).exists():
+            messages.error(request, "A student with this ID already exists.")
+            return redirect("edit_student", slug=student.slug)
+
         # Retrieve parent data from the form
         parent.father_name = request.POST.get('father_name')
         parent.father_occupation = request.POST.get('father_occupation')
@@ -111,8 +133,7 @@ def edit_student(request,slug):
         parent.permanent_address = request.POST.get('permanent_address')
         parent.save()
 
-#  update student information
-
+        # update student information
         student.first_name= first_name
         student.last_name= last_name
         student.student_id= student_id
@@ -126,25 +147,31 @@ def edit_student(request,slug):
         student.section = section
         student.student_image = student_image
         student.save()
-        create_notification(request.user, f"Added Student: {student.first_name} {student.last_name}")
+        create_notification(request.user, f"Updated student: {student.first_name} {student.last_name}")
+        messages.success(request, "Student updated successfully")
         
         return redirect("student_list")
     return render(request, "students/edit-student.html",{'student':student, 'parent':parent} )
 
 
+@login_required
 def view_student(request, slug):
-    student = get_object_or_404(Student, student_id = slug)
+    _ensure_staff_access(request)
+    student = get_object_or_404(Student, slug=slug)
     context = {
         'student': student
     }
     return render(request, "students/student-details.html", context)
 
 
+@login_required
 def delete_student(request,slug):
+    _ensure_staff_access(request)
     if request.method == "POST":
         student = get_object_or_404(Student, slug=slug)
         student_name = f"{student.first_name} {student.last_name}"
         student.delete()
         create_notification(request.user, f"Deleted student: {student_name}")
+        messages.success(request, "Student deleted successfully")
         return redirect ('student_list')
     return HttpResponseForbidden()

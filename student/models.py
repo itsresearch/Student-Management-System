@@ -37,8 +37,9 @@ class Student(models.Model):
     slug = models.SlugField(max_length=255, unique=True, blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(f"{self.first_name}-{self.last_name}-{self.student_id}")
+        desired_slug = slugify(f"{self.first_name}-{self.last_name}-{self.student_id}")
+        if not self.slug or self.slug != desired_slug:
+            self.slug = desired_slug
         super(Student, self).save(*args, **kwargs)
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.student_id})"

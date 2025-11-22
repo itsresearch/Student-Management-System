@@ -1,0 +1,80 @@
+{% extends 'Home/base.html' %}
+{% load static %}
+{% block body %}
+<div class="page-wrapper">
+   <div class="content container-fluid">
+      <div class="page-header">
+         <div class="row align-items-center">
+            <div class="col">
+               <h3 class="page-title">Class Schedules</h3>
+               <ul class="breadcrumb">
+                  <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a></li>
+                  <li class="breadcrumb-item active">Manage schedules</li>
+               </ul>
+            </div>
+         </div>
+      </div>
+
+      <div class="row">
+         <div class="col-lg-4">
+            <div class="card">
+               <div class="card-header">
+                  <h5 class="card-title mb-0">Schedule a class</h5>
+               </div>
+               <div class="card-body">
+                  <form method="post">
+                     {% csrf_token %}
+                     {{ form.as_p }}
+                     <button type="submit" class="btn btn-primary btn-block">Save</button>
+                  </form>
+               </div>
+            </div>
+         </div>
+         <div class="col-lg-8">
+            <div class="card">
+               <div class="card-header">
+                  <h5 class="card-title mb-0">Upcoming & recent sessions</h5>
+               </div>
+               <div class="card-body">
+                  <div class="table-responsive">
+                     <table class="table table-hover">
+                        <thead>
+                           <tr>
+                              <th>Date</th>
+                              <th>Class</th>
+                              <th>Topic</th>
+                              <th>Attendance</th>
+                              <th>Status</th>
+                           </tr>
+                        </thead>
+                        <tbody>
+                           {% for schedule in schedules %}
+                           <tr>
+                              <td>{{ schedule.date|date:"M d" }} {{ schedule.start_time|time:"H:i" }}</td>
+                              <td>{{ schedule.class_name }}</td>
+                              <td>{{ schedule.topic }}</td>
+                              <td>{{ schedule.present_students }}/{{ schedule.total_students }}</td>
+                              <td><span class="badge badge-secondary text-uppercase">{{ schedule.status }}</span></td>
+                           </tr>
+                           {% empty %}
+                           <tr>
+                              <td colspan="5" class="text-center text-muted">No schedule entries yet.</td>
+                           </tr>
+                           {% endfor %}
+                        </tbody>
+                     </table>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+
+<script src="{% static 'assets/js/jquery-3.6.0.min.js' %}"></script>
+<script src="{% static 'assets/js/popper.min.js' %}"></script>
+<script src="{% static 'assets/plugins/bootstrap/js/bootstrap.min.js' %}"></script>
+<script src="{% static 'assets/plugins/slimscroll/jquery.slimscroll.min.js' %}"></script>
+<script src="{% static 'assets/js/script.js' %}"></script>
+{% endblock %}
+

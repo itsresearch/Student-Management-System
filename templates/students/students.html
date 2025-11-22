@@ -9,12 +9,12 @@
                      <div class="col">
                         <h3 class="page-title">Students</h3>
                         <ul class="breadcrumb">
-                           <li class="breadcrumb-item"><a href="">Dashboard</a></li>
+                           <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
                            <li class="breadcrumb-item active">Students</li>
                         </ul>
                      </div>
                      <div class="col-auto text-right float-right ml-auto">
-                        <a href="#" class="btn btn-outline-primary mr-2"><i class="fas fa-download"></i> Download</a>
+                        <a href="javascript:window.print()" class="btn btn-outline-primary mr-2"><i class="fas fa-download"></i> Download</a>
                         <a href="{% url 'add_student' %}" class="btn btn-primary"><i class="fas fa-plus"></i></a>
                      </div>
                   </div>
@@ -43,8 +43,14 @@
                                        <td>{{ student.student_id}}</td>
                                        <td>
                                           <h2 class="table-avatar">
-                                             <a href="{% url 'view_student' student.student_id %}" class="avatar avatar-sm mr-2"><img class="avatar-img rounded-circle" src="{{ student.student_image.url }}" alt="User Image"></a>
-                                             <a href="{% url 'view_student' student.student_id %}">{{ student.first_name }} {{ student.last_name}}</a>
+                                             <a href="{% url 'view_student' student.slug %}" class="avatar avatar-sm mr-2">
+                                                {% if student.student_image %}
+                                                <img class="avatar-img rounded-circle" src="{{ student.student_image.url }}" alt="{{ student.first_name }}">
+                                                {% else %}
+                                                <img class="avatar-img rounded-circle" src="{% static 'assets/img/user.jpg' %}" alt="{{ student.first_name }}">
+                                                {% endif %}
+                                             </a>
+                                             <a href="{% url 'view_student' student.slug %}">{{ student.first_name }} {{ student.last_name}}</a>
                                           </h2>
                                        </td>
                                        <td>{{ student.student_class }}</td>
