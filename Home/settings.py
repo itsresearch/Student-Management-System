@@ -126,9 +126,9 @@ STATICFILES_DIRS = [
 
 #  add this for authentication
 
-AUTH_USER_MODEL = 'home_auth.CustomUser'  # Adjust 'home_auth' to the app where CustomUser is defined
+AUTH_USER_MODEL = 'home_auth.CustomUser'  
 AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',  # Default backend
+    'django.contrib.auth.backends.ModelBackend', 
 )
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
